@@ -23,7 +23,7 @@ class SplashScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             LottieLoader(
-              assetName: 'Money.lottie', 
+              assetName: 'loading.json', 
               fallback: const CircularProgressIndicator(),
             ),
             const SizedBox(height: 16),

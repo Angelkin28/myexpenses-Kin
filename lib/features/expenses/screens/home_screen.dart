@@ -123,7 +123,7 @@ class HomeScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               LottieLoader(
-                                assetName: 'no result found.lottie',
+                                assetName: 'empty_state.json',
                                 fallback: const Icon(Icons.inbox, size: 100, color: Colors.grey),
                               ),
                               const SizedBox(height: 16),
