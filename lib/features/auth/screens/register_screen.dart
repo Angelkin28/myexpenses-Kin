@@ -24,15 +24,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        title: const Text('Create Account'),
-      ),
+      appBar: AppBar(title: const Text('Create Account')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Card(
             elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Form(
@@ -40,11 +40,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.person_add_outlined, size: 64, color: Color(0xFF6C63FF)),
+                    const Icon(
+                      Icons.person_add_outlined,
+                      size: 64,
+                      color: Color(0xFF6C63FF),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Sign Up',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
                           ),
@@ -60,7 +65,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your name';
                         }
-                        if (value.length < 3) return 'Name must be at least 3 characters';
+                        if (value.length < 3)
+                          return 'Name must be at least 3 characters';
                         return null;
                       },
                     ),
@@ -88,7 +94,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                           ),
                           onPressed: () {
                             setState(() {
@@ -101,7 +109,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter a password';
                         }
-                        if (value.length < 6) return 'Password must be at least 6 characters';
+                        if (value.length < 6)
+                          return 'Password must be at least 6 characters';
                         return null;
                       },
                     ),
@@ -129,7 +138,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         padding: const EdgeInsets.only(bottom: 16.0),
                         child: Text(
                           authProvider.errorMessage!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -147,7 +158,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   );
                                   if (success && mounted) {
                                     // Navigate to verify
-                                    context.push('/verify-code', extra: _emailController.text.trim());
+                                    context.push(
+                                      '/verify-code',
+                                      extra: _emailController.text.trim(),
+                                    );
                                   }
                                 }
                               },

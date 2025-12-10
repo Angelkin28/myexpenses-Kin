@@ -6,7 +6,7 @@ import '../../auth/models/user_model.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository = AuthRepository();
-  
+
   UserModel? _user;
   bool _isLoading = false;
   String? _errorMessage;
@@ -51,7 +51,7 @@ class AuthProvider extends ChangeNotifier {
 
       // Update Dio
       DioClient().setAccessToken(token);
-      
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -107,5 +107,35 @@ class AuthProvider extends ChangeNotifier {
     await prefs.clear();
     DioClient().setAccessToken(null); // Revert to anon key
     notifyListeners();
+  }
+
+  Future<bool> deleteAccount() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (_user == null) {
+        throw Exception('No user logged in');
+      }
+
+      // Delete account from Supabase
+      await _authRepository.deleteAccount(_user!.id);
+
+      // Clear local session
+      _user = null;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      DioClient().setAccessToken(null);
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 }
