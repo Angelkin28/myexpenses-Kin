@@ -63,7 +63,7 @@ class AppTheme {
       foregroundColor: Colors.white,
       shape: CircleBorder(), // Explicit circle
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 4,
       shadowColor: Colors.black.withOpacity(0.1),
       shape: RoundedRectangleBorder(

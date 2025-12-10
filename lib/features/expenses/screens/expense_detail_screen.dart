@@ -119,7 +119,7 @@ class ExpenseDetailScreen extends StatelessWidget {
                     _DetailRow(
                       label: 'Created At', 
                       value: expense.createdAt != null 
-                        ? DateFormat.yMMMd().add_Ht().format(expense.createdAt!) 
+                        ? DateFormat.yMMMd().add_Hm().format(expense.createdAt!) 
                         : 'Unknown'
                     ),
                   ],
