@@ -4,40 +4,26 @@ import 'package:provider/provider.dart';
 import '../../../shared/widgets/lottie_loader.dart';
 import '../providers/auth_provider.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _checkAuth();
-  }
-
-  Future<void> _checkAuth() async {
-    // Simulate Lottie animation time (2s)
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-
-    final auth = context.read<AuthProvider>();
-    // In real app, check auth status here
-    // For now, go to Login
-    context.go('/login');
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Navigate after 2 seconds
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(seconds: 2));
+      if (context.mounted) {
+        context.go('/login');
+      }
+    });
+
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             LottieLoader(
-              assetName: 'loading.json', 
+              assetName: 'Money.lottie', 
               fallback: const CircularProgressIndicator(),
             ),
             const SizedBox(height: 16),

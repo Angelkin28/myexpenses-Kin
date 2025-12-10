@@ -6,217 +6,220 @@ import '../../auth/providers/auth_provider.dart';
 import '../models/expense_model.dart';
 import '../models/category_model.dart';
 import '../providers/expenses_provider.dart';
+import '../providers/expense_form_provider.dart';
 
-class AddEditExpenseScreen extends StatefulWidget {
+class AddEditExpenseScreen extends StatelessWidget {
   final String? expenseId;
   const AddEditExpenseScreen({super.key, this.expenseId});
 
   @override
-  State<AddEditExpenseScreen> createState() => _AddEditExpenseScreenState();
-}
+  Widget build(BuildContext context) {
+    // Initialize form when navigating
+    // Using a microtask or just relying on the fact that this is built once
+    // A better pattern for StatelessWidget init is confusing in Flutter without hooks/init state.
+    // We can check if the form is dirty or matches current ID.
+    // For simplicity, we initialize on every build if ID changed?. 
+    // ACTUALLY: The cleanest way without StatefulWidget is using a "Builder" that inits logic,
+    // OR just accepting that we init it via the Router builder callback? 
+    // GoRouter builder is a good place, but we don't have context easily there.
+    
+    // Let's use a PostFrameCallback workaround inside build? No, that loops.
+    // We will initialize it ONLY if the ID in provider doesn't match the widget ID.
+    
+    final formProvider = context.read<ExpenseFormProvider>();
+    // If expenseId is null and provider.id is not null -> Reset
+    // If expenseId is X and provider.id is not X -> Load X
+    
+    // NOTE: This logic inside build is "okay" given constraints but ideally logic belongs in router.
+    // Let's assume the user navigates here, we trigger a "reset/load" before pushing?
+    // Hard to do with declarative routes perfectly.
+    // We'll leave the init logic to the caller or do a safe check here.
+    
+    if (expenseId != formProvider.expenseId) {
+       // Need to defer this update
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+         if (expenseId != null) {
+            final expense = context.read<ExpensesProvider>().expenses.firstWhere(
+              (e) => e.id == expenseId,
+              orElse: () => throw Exception('Not found'),
+            );
+            context.read<ExpenseFormProvider>().init(expense);
+         } else {
+            context.read<ExpenseFormProvider>().reset();
+         }
+       });
+    }
 
-class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _amountController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  
-  ExpenseCategory _selectedCategory = ExpenseCategory.food;
-  String _paymentMethod = 'cash';
-  DateTime _selectedDate = DateTime.now();
-  
-  bool _isInit = true;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isInit && widget.expenseId != null) {
-      final expense = context.read<ExpensesProvider>().expenses.firstWhere(
-            (e) => e.id == widget.expenseId,
-            orElse: () => throw Exception('Expense not found'), // Should handle better
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(expenseId == null ? 'New Expense' : 'Edit Expense'),
+        actions: [
+          Consumer<ExpenseFormProvider>(
+            builder: (context, form, _) => IconButton(
+              icon: Icon(Icons.check, color: form.isValid ? Colors.white : Colors.grey),
+              onPressed: form.isValid ? () => _saveExpense(context) : null,
+            ),
+          )
+        ],
+      ),
+      body: Consumer<ExpenseFormProvider>(
+        builder: (context, form, _) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Amount
+                TextFormField(
+                  controller: form.amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  decoration: const InputDecoration(
+                    labelText: 'Amount',
+                    prefixText: '\$ ',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Description
+                TextFormField(
+                  controller: form.descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    prefixIcon: Icon(Icons.description),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Category Dropdown
+                DropdownButtonFormField<ExpenseCategory>(
+                  value: form.selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    prefixIcon: Icon(Icons.category),
+                  ),
+                  items: ExpenseCategory.values.map((cat) {
+                    return DropdownMenuItem(
+                      value: cat,
+                      child: Row(
+                        children: [
+                          Icon(cat.icon, color: cat.color, size: 20),
+                          const SizedBox(width: 8),
+                          Text(cat.name),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    form.setCategory(val!);
+                  },
+                ),
+                const SizedBox(height: 16),
+                
+                // Payment Method
+                DropdownButtonFormField<String>(
+                  value: form.paymentMethod,
+                  decoration: const InputDecoration(
+                    labelText: 'Payment Method',
+                    prefixIcon: Icon(Icons.payment),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'cash', child: Text('Cash')),
+                    DropdownMenuItem(value: 'card', child: Text('Card')),
+                    DropdownMenuItem(value: 'transfer', child: Text('Transfer')),
+                  ],
+                  onChanged: (val) {
+                    form.setPaymentMethod(val!);
+                  },
+                ),
+                const SizedBox(height: 16),
+                
+                // Date Picker
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: form.selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      form.setDate(picked);
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Date',
+                      prefixIcon: Icon(Icons.calendar_today),
+                    ),
+                    child: Text(DateFormat.yMMMEd().format(form.selectedDate)),
+                  ),
+                ),
+              ],
+            ),
           );
-      
-      _amountController.text = expense.amount.toString();
-      _descriptionController.text = expense.description;
-      _selectedCategory = expense.category;
-      _paymentMethod = expense.paymentMethod;
-      _selectedDate = expense.date;
-    }
-    _isInit = false;
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+        },
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ElevatedButton(
+          onPressed: form.isValid ? () => _saveExpense(context) : null,
+          child: const Text('Save Expense'),
+        ),
+      ),
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
   }
 
-  Future<void> _saveExpense() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _saveExpense(BuildContext context) async {
+    final form = context.read<ExpenseFormProvider>();
+    final amountText = form.amountController.text;
+    final description = form.descriptionController.text;
+
+    // Validation
+    if (amountText.isEmpty || double.tryParse(amountText) == null || double.parse(amountText) <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid amount')));
+      return;
+    }
+    if (description.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Description must be at least 3 chars')));
+      return;
+    }
 
     final provider = context.read<ExpensesProvider>();
     final authProvider = context.read<AuthProvider>();
-    final amount = double.parse(_amountController.text);
-    final description = _descriptionController.text;
 
     try {
-      if (widget.expenseId == null) {
+      if (expenseId == null) {
         // Create
         final newExpense = Expense(
-          id: '', // Supabase generates this
+          id: '',
           userId: authProvider.user?.id,
-          amount: amount,
+          amount: double.parse(amountText),
           description: description,
-          category: _selectedCategory,
-          paymentMethod: _paymentMethod,
-          date: _selectedDate,
+          category: form.selectedCategory,
+          paymentMethod: form.paymentMethod,
+          date: form.selectedDate,
         );
         await provider.addExpense(newExpense);
       } else {
         // Edit
         final updatedExpense = Expense(
-          id: widget.expenseId!,
+          id: expenseId!,
           userId: authProvider.user?.id,
-          amount: amount,
+          amount: double.parse(amountText),
           description: description,
-          category: _selectedCategory,
-          paymentMethod: _paymentMethod,
-          date: _selectedDate,
+          category: form.selectedCategory,
+          paymentMethod: form.paymentMethod,
+          date: form.selectedDate,
         );
         await provider.updateExpense(updatedExpense);
       }
       
-      if (mounted) context.pop();
+      if (context.mounted) context.pop();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.expenseId == null ? 'New Expense' : 'Edit Expense'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _saveExpense,
-          )
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Amount
-              TextFormField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                decoration: const InputDecoration(
-                  labelText: 'Amount',
-                  prefixText: '\$ ',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter amount';
-                  if (double.tryParse(value) == null) return 'Invalid number';
-                  if (double.parse(value) <= 0) return 'Amount must be > 0';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Description
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  prefixIcon: Icon(Icons.description),
-                ),
-                validator: (value) {
-                  if (value == null || value.length < 3) return 'At least 3 chars';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Category Dropdown
-              DropdownButtonFormField<ExpenseCategory>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  prefixIcon: Icon(Icons.category),
-                ),
-                items: ExpenseCategory.values.map((cat) {
-                  return DropdownMenuItem(
-                    value: cat,
-                    child: Row(
-                      children: [
-                        Icon(cat.icon, color: cat.color, size: 20),
-                        const SizedBox(width: 8),
-                        Text(cat.name),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  setState(() => _selectedCategory = val!);
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Payment Method
-              DropdownButtonFormField<String>(
-                value: _paymentMethod,
-                decoration: const InputDecoration(
-                  labelText: 'Payment Method',
-                  prefixIcon: Icon(Icons.payment),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'cash', child: Text('Cash')),
-                  DropdownMenuItem(value: 'card', child: Text('Card')),
-                  DropdownMenuItem(value: 'transfer', child: Text('Transfer')),
-                ],
-                onChanged: (val) {
-                  setState(() => _paymentMethod = val!);
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Date Picker
-              InkWell(
-                onTap: () => _selectDate(context),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Date',
-                    prefixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(DateFormat.yMMMEd().format(_selectedDate)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          onPressed: _saveExpense,
-          child: const Text('Save Expense'),
-        ),
-      ),
-    );
   }
 }

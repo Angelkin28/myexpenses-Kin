@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../models/expense_model.dart';
 import '../models/category_model.dart';
 import '../repositories/expenses_repository.dart';
@@ -15,12 +16,27 @@ class ExpensesProvider extends ChangeNotifier {
 
   // Filters
   String _searchQuery = '';
-  ExpenseCategory? _selectedCategory;
+  // _selectedCategories defined below
   DateTimeRange? _dateRange; // From - To
+  Timer? _debounce;
 
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-  List<Expense> get expenses => _filteredExpenses;
+  // ... (getters)
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // Filter Logic
+  void setSearchQuery(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _searchQuery = query;
+      _applyFilters();
+      notifyListeners();
+    });
+  }
 
   // Getters for Stats
   double get totalForMonth {
@@ -93,15 +109,29 @@ class ExpensesProvider extends ChangeNotifier {
     }
   }
 
-  // Filter Logic
-  void setSearchQuery(String query) {
-    _searchQuery = query;
+  List<ExpenseCategory> _selectedCategories = [];
+
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  List<Expense> get expenses => _filteredExpenses;
+  List<ExpenseCategory> get selectedCategories => _selectedCategories;
+  DateTimeRange? get dateRange => _dateRange;
+
+  // ... (dispose, setSearchQuery, getters for stats, CRUD methods same as before)
+
+  // Filter Logic Updated
+  void toggleCategoryFilter(ExpenseCategory category) {
+    if (_selectedCategories.contains(category)) {
+      _selectedCategories.remove(category);
+    } else {
+      _selectedCategories.add(category);
+    }
     _applyFilters();
     notifyListeners();
   }
 
-  void setCategoryFilter(ExpenseCategory? category) {
-    _selectedCategory = category;
+  void clearCategoryFilters() {
+    _selectedCategories.clear();
     _applyFilters();
     notifyListeners();
   }
@@ -117,7 +147,8 @@ class ExpensesProvider extends ChangeNotifier {
       bool matchesSearch = _searchQuery.isEmpty || 
           e.description.toLowerCase().contains(_searchQuery.toLowerCase());
       
-      bool matchesCategory = _selectedCategory == null || e.category == _selectedCategory;
+      // Multi-select logic: If empty, show all. If not empty, show if contained.
+      bool matchesCategory = _selectedCategories.isEmpty || _selectedCategories.contains(e.category);
       
       bool matchesDate = _dateRange == null || 
           (e.date.isAfter(_dateRange!.start.subtract(const Duration(days: 1))) && 

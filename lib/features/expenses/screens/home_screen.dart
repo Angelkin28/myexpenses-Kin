@@ -8,25 +8,34 @@ import '../models/expense_model.dart';
 import '../models/category_model.dart';
 import '../../auth/providers/auth_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+import '../providers/expenses_provider.dart';
+import '../models/expense_model.dart';
+import '../models/category_model.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../widgets/filter_bottom_sheet.dart';
+import '../../../shared/widgets/lottie_loader.dart';
+
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Fetch data after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ExpensesProvider>().loadExpenses();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Initial Load - Idempotent check
+    // Ideally this should be run once. With Stateless, we can assume
+    // that if the list is empty AND not loading, we fetch.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = context.read<ExpensesProvider>();
+      if (!p.isLoading && p.expenses.isEmpty && p.error == null) {
+        // This check is rudimentary, ideally store "isLoaded" flag
+        p.loadExpenses(); 
+      }
+    });
+
     final expensesProvider = context.watch<ExpensesProvider>();
     final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
@@ -36,8 +45,10 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('MyExpenses'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.person),
             onPressed: () {
+              // TODO: Navigate to Profile
+              // For now logout to test
               context.read<AuthProvider>().logout();
               context.go('/login');
             },
@@ -81,6 +92,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search expenses...',
                       prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.filter_list),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (_) => const FilterBottomSheet(),
+                          );
+                        },
+                      ),
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -88,7 +108,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     onChanged: (val) {
-                      // Simple manual debounce could be here, but provider handles query
                       context.read<ExpensesProvider>().setSearchQuery(val);
                     },
                   ),
@@ -103,11 +122,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Try Lottie, fallback to Icon
-                              Lottie.asset(
-                                'assets/lottie/empty_state.json',
-                                height: 200,
-                                errorBuilder: (c, e, s) => const Icon(Icons.inbox, size: 100, color: Colors.grey),
+                              LottieLoader(
+                                assetName: 'no result found.lottie',
+                                fallback: const Icon(Icons.inbox, size: 100, color: Colors.grey),
                               ),
                               const SizedBox(height: 16),
                               const Text('No expenses found'),

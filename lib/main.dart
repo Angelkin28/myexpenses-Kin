@@ -5,6 +5,7 @@ import 'core/constants/app_theme.dart';
 import 'routes.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/expenses/providers/expenses_provider.dart';
+import 'features/expenses/providers/expense_form_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ExpensesProvider()),
+        ChangeNotifierProvider(create: (_) => ExpenseFormProvider()),
       ],
       child: const MyExpensesApp(),
     ),
