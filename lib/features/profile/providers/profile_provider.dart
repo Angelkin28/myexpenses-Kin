@@ -8,10 +8,12 @@ class ProfileProvider extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _profilePhotoUrl;
+  String? _fullName;
   String? _error;
 
   bool get isLoading => _isLoading;
   String? get profilePhotoUrl => _profilePhotoUrl;
+  String? get fullName => _fullName;
   String? get error => _error;
 
   Future<void> loadProfile() async {
@@ -25,6 +27,7 @@ class ProfileProvider extends ChangeNotifier {
           response.data is List &&
           response.data.isNotEmpty) {
         _profilePhotoUrl = response.data[0]['profile_photo_url'];
+        _fullName = response.data[0]['full_name'];
       }
     } catch (e) {
       _error = e.toString();

@@ -6,13 +6,16 @@ import '../models/user_model.dart';
 class AuthRepository {
   final DioClient _dioClient = DioClient();
 
-  Future<UserModel> signUp(String email, String password) async {
+  Future<UserModel> signUp(String email, String password, String fullName) async {
     try {
       final response = await _dioClient.dio.post(
         '/auth/v1/signup',
         data: {
           'email': email,
           'password': password,
+          'user_metadata': {
+            'full_name': fullName,
+          },
         },
       );
       

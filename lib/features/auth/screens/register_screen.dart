@@ -11,6 +11,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -49,6 +50,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                     ),
                     const SizedBox(height: 32),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your name';
+                        }
+                        if (value.length < 3) return 'Name must be at least 3 characters';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(
@@ -127,6 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   final success = await authProvider.register(
                                     _emailController.text.trim(),
                                     _passwordController.text.trim(),
+                                    _nameController.text.trim(),
                                   );
                                   if (success && mounted) {
                                     // Navigate to verify

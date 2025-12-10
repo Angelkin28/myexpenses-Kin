@@ -195,13 +195,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildInfoRow(
                           context,
                           icon: Icons.person,
-                          label: 'User ID',
-                          value:
-                              context.read<AuthProvider>().user?.id.substring(
-                                0,
-                                8,
-                              ) ??
-                              'N/A',
+                          label: 'Full Name',
+                          value: provider.fullName ?? 'Not available',
                         ),
                       ],
                     ),

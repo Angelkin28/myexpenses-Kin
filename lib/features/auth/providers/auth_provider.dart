@@ -63,13 +63,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(String email, String password) async {
+  Future<bool> register(String email, String password, String fullName) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _authRepository.signUp(email, password);
+      await _authRepository.signUp(email, password, fullName);
       _isLoading = false;
       // Note: Usually signup requires email confirmation, so we don't login automatically yet
       // unless Supabase "Enable email confirmations" is OFF.
