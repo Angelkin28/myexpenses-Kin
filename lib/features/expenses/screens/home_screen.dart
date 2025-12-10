@@ -2,180 +2,231 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
 import '../providers/expenses_provider.dart';
 import '../models/expense_model.dart';
 import '../models/category_model.dart';
-import '../../auth/providers/auth_provider.dart';
-
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
-import '../providers/expenses_provider.dart';
-import '../models/expense_model.dart';
-import '../models/category_model.dart';
-import '../../auth/providers/auth_provider.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import '../../../shared/widgets/lottie_loader.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Initial Load - Idempotent check
-    // Ideally this should be run once. With Stateless, we can assume
-    // that if the list is empty AND not loading, we fetch.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final p = context.read<ExpensesProvider>();
-      if (!p.isLoading && p.expenses.isEmpty && p.error == null) {
-        // This check is rudimentary, ideally store "isLoaded" flag
-        p.loadExpenses(); 
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load expenses once when screen is opened
+    Future.microtask(() {
+      final provider = context.read<ExpensesProvider>();
+      if (!provider.isInitialized && !provider.isLoading) {
+        provider.loadExpenses();
       }
     });
+  }
 
-    final expensesProvider = context.watch<ExpensesProvider>();
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ExpensesProvider>(
+      builder: (context, expensesProvider, _) {
+        final currencyFormat = NumberFormat.currency(
+          symbol: '\$',
+          decimalDigits: 2,
+        );
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        title: const Text('MyExpenses'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              // TODO: Navigate to Profile
-              // For now logout to test
-              context.read<AuthProvider>().logout();
-              context.go('/login');
-            },
-          )
-        ],
-      ),
-      body: expensesProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Summary Cards
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _SummaryCard(
-                          title: 'This Month',
-                          amount: expensesProvider.totalForMonth,
-                          color: Theme.of(context).colorScheme.primary,
-                          icon: Icons.calendar_month,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _SummaryCard(
-                          title: 'Today',
-                          amount: expensesProvider.totalForDay,
-                          color: Theme.of(context).colorScheme.secondary,
-                          icon: Icons.today,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Filters & Search Bar (Simple version)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search expenses...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.filter_list),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            builder: (_) => const FilterBottomSheet(),
-                          );
-                        },
-                      ),
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.background,
+          appBar: AppBar(
+            title: const Text('MyExpenses'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.person),
+                onPressed: () {
+                  context.push('/profile');
+                },
+              ),
+            ],
+          ),
+          body: expensesProvider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    // Summary Cards
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _SummaryCard(
+                              title: 'This Month',
+                              amount: expensesProvider.totalForMonth,
+                              color: Theme.of(context).colorScheme.primary,
+                              icon: Icons.calendar_month,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _SummaryCard(
+                              title: 'Today',
+                              amount: expensesProvider.totalForDay,
+                              color: Theme.of(context).colorScheme.secondary,
+                              icon: Icons.today,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    onChanged: (val) {
-                      context.read<ExpensesProvider>().setSearchQuery(val);
-                    },
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
 
-                // List
-                Expanded(
-                  child: expensesProvider.expenses.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              LottieLoader(
-                                assetName: 'empty_state.json',
-                                fallback: const Icon(Icons.inbox, size: 100, color: Colors.grey),
-                              ),
-                              const SizedBox(height: 16),
-                              const Text('No expenses found'),
-                            ],
+                    // Filters & Search Bar (Simple version)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search expenses...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.filter_list),
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (_) => const FilterBottomSheet(),
+                              );
+                            },
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.only(bottom: 80),
-                          itemCount: expensesProvider.groupedExpenses.keys.length,
-                          itemBuilder: (context, index) {
-                            final dateKey = expensesProvider.groupedExpenses.keys.elementAt(index);
-                            final expenses = expensesProvider.groupedExpenses[dateKey]!;
-                            final totalForGroup = expenses.fold(0.0, (sum, e) => sum + e.amount);
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        DateFormat.yMMMd().format(DateTime.parse(dateKey)),
-                                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey[700],
-                                        ),
-                                      ),
-                                      Text(
-                                        currencyFormat.format(totalForGroup),
-                                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey[700],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                ...expenses.map((expense) => _ExpenseTile(expense: expense)),
-                              ],
-                            );
-                          },
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
+                        onChanged: (val) {
+                          context.read<ExpensesProvider>().setSearchQuery(val);
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // List
+                    Expanded(
+                      child: expensesProvider.expenses.isEmpty
+                          ? Center(
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (expensesProvider.hasSearch) ...[
+                                      LottieLoader(
+                                        assetName: 'no_result_found.json',
+                                        height: 200,
+                                        width: 200,
+                                        fit: BoxFit.contain,
+                                        repeat: true,
+                                        playOnce: false,
+                                        fallback: const Icon(
+                                          Icons.search_off,
+                                          size: 100,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text('No results for your search'),
+                                    ] else ...[
+                                      LottieLoader(
+                                        assetName: 'no_result_found.json',
+                                        height: 200,
+                                        width: 200,
+                                        fit: BoxFit.contain,
+                                        repeat: true,
+                                        playOnce: false,
+                                        fallback: const Icon(
+                                          Icons.inbox,
+                                          size: 100,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text('No expenses yet'),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 80),
+                              itemCount:
+                                  expensesProvider.groupedExpenses.keys.length,
+                              itemBuilder: (context, index) {
+                                final dateKey = expensesProvider
+                                    .groupedExpenses
+                                    .keys
+                                    .elementAt(index);
+                                final expenses =
+                                    expensesProvider.groupedExpenses[dateKey]!;
+                                final totalForGroup = expenses.fold(
+                                  0.0,
+                                  (sum, e) => sum + e.amount,
+                                );
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            DateFormat.yMMMd().format(
+                                              DateTime.parse(dateKey),
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.grey[700],
+                                                ),
+                                          ),
+                                          Text(
+                                            currencyFormat.format(
+                                              totalForGroup,
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.grey[700],
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    ...expenses.map(
+                                      (expense) =>
+                                          _ExpenseTile(expense: expense),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/add-expense'),
-        child: const Icon(Icons.add),
-      ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => context.push('/add-expense'),
+            child: const Icon(Icons.add),
+          ),
+        );
+      },
     );
   }
 }
@@ -195,7 +246,10 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(
+      symbol: '\$',
+      decimalDigits: 2,
+    );
 
     return Card(
       elevation: 4,
@@ -212,7 +266,10 @@ class _SummaryCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -239,7 +296,10 @@ class _ExpenseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(
+      symbol: '\$',
+      decimalDigits: 2,
+    );
 
     return Dismissible(
       key: Key(expense.id),
@@ -257,14 +317,20 @@ class _ExpenseTile extends StatelessWidget {
             title: const Text('Delete Expense?'),
             content: const Text('This action cannot be undone.'),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete'),
+              ),
             ],
           ),
         );
       },
       onDismissed: (_) {
-         context.read<ExpensesProvider>().deleteExpense(expense.id);
+        context.read<ExpensesProvider>().deleteExpense(expense.id);
       },
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

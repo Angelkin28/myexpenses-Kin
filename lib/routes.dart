@@ -8,18 +8,13 @@ import 'features/auth/screens/splash_screen.dart';
 import 'features/expenses/screens/add_edit_expense_screen.dart';
 import 'features/expenses/screens/expense_detail_screen.dart';
 import 'features/expenses/screens/home_screen.dart';
+import 'features/profile/screens/profile_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
@@ -31,21 +26,24 @@ final router = GoRouter(
         return VerifyCodeScreen(email: email);
       },
     ),
-    GoRoute(
-      path: '/home',
-      builder: (context, state) => const HomeScreen(),
-    ),
+    GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
     GoRoute(
       path: '/add-expense',
       builder: (context, state) => const AddEditExpenseScreen(),
     ),
     GoRoute(
       path: '/edit-expense/:id',
-      builder: (context, state) => AddEditExpenseScreen(expenseId: state.pathParameters['id']),
+      builder: (context, state) =>
+          AddEditExpenseScreen(expenseId: state.pathParameters['id']),
     ),
     GoRoute(
       path: '/expense/:id',
-      builder: (context, state) => ExpenseDetailScreen(expenseId: state.pathParameters['id']!),
+      builder: (context, state) =>
+          ExpenseDetailScreen(expenseId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
   redirect: (context, state) {
@@ -53,10 +51,9 @@ final router = GoRouter(
     final auth = context.read<AuthProvider>();
     final loggingIn = state.uri.toString() == '/login';
     final registering = state.uri.toString() == '/register';
-    final verifying = state.uri.toString() == '/verify-code'; // Careful with params
     final simpleVerify = state.uri.toString().startsWith('/verify-code');
     final splash = state.uri.toString() == '/';
-    
+
     // Allow splash, login and register to pass through
     if (splash || loggingIn || registering || simpleVerify) return null;
 

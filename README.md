@@ -1,20 +1,90 @@
-# MyExpenses - Gestor de Gastos Personales
+# MyExpenses - Aplicación de Gestión de Gastos
 
-Aplicación Flutter para gestión de gastos diarios, desarrollada como prueba técnica.
+![Flutter](https://img.shields.io/badge/Flutter-v3.9.2-blue)
+![Dart](https://img.shields.io/badge/Dart-v3.9.2-blue)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-## 📱 Screenshots
-(Agrega tus capturas aquí)
+Una aplicación móvil moderna y elegante para gestionar tus gastos personales, construida con Flutter y Supabase.
 
-## 🛠 Instalación
+## 📱 Capturas de Pantalla
 
-1.  **Clonar el repositorio:**
-    ```bash
-    git clone <tu-repo>
-    cd myexpenses-app
-    ```
+### Pantalla Principal
+- **Home Screen**: Visualiza tus gastos organizados por fecha con resúmenes del día y del mes
+- **Animaciones Lottie**: Estados vacíos y carga con animaciones fluidas
+- **Búsqueda y Filtros**: Busca gastos con debounce de 500ms y filtra por categorías y fechas
 
-2.  **Configurar Variables de Entorno:**
-    Crea un archivo `.env` en la raíz con tus credenciales de Supabase:
+### Gestión de Gastos
+- **Agregar/Editar Gastos**: Formulario intuitivo con validación en tiempo real
+- **Categorías**: 7 categorías predefinidas (Alimentación, Transporte, Entretenimiento, Salud, Servicios, Educación, Otros)
+- **Detalles**: Vista detallada de cada gasto con opción de editar o eliminar
+
+### Perfil de Usuario
+- **Foto de Perfil**: Sube y actualiza tu foto de perfil almacenada en Supabase Storage
+- **Información de Cuenta**: Visualiza tu email y datos de usuario
+- **Logout**: Cierra sesión de forma segura
+
+## 🚀 Características
+
+### Funcionalidades Principales
+- ✅ **Autenticación completa**: Registro, login y verificación por código
+- ✅ **Gestión de gastos**: Crear, leer, actualizar y eliminar gastos (CRUD completo)
+- ✅ **Categorización**: 7 categorías predefinidas con iconos y colores únicos
+- ✅ **Filtros avanzados**: Por categoría, rango de fechas y búsqueda de texto
+- ✅ **Resúmenes automáticos**: Totales del día y del mes actualizados en tiempo real
+- ✅ **Perfil de usuario**: Foto de perfil almacenada en Supabase Storage
+- ✅ **Formato de moneda**: Peso mexicano ($) con formato correcto
+- ✅ **Validaciones**: Monto > 0 y descripción >= 3 caracteres
+
+### Tecnologías y Arquitectura
+- 🏗️ **Arquitectura limpia**: Feature-first con separación de capas
+- 🔐 **Row Level Security (RLS)**: Cada usuario solo accede a sus propios datos
+- 🎨 **Material Design**: UI moderna y responsive
+- 🔄 **State Management**: Provider con ChangeNotifier
+- 🌐 **REST API**: Integración con Supabase vía Dio
+- 📦 **Local Storage**: Tokens guardados con SharedPreferences
+
+## 🛠️ Instalación
+
+### Prerequisitos
+
+- Flutter SDK >= 3.9.2
+- Dart SDK >= 3.9.2
+- Android Studio / Xcode (para compilar en Android/iOS)
+- Cuenta de Supabase (gratuita)
+
+### Paso 1: Clonar el repositorio
+
+```bash
+git clone https://github.com/Angelkin28/myexpenses-Kin.git
+cd myexpenses-Kin/myexpenses_app
+```
+
+### Paso 2: Instalar dependencias
+
+```bash
+flutter pub get
+```
+
+### Paso 3: Configurar Supabase
+
+1. Crea un proyecto en [Supabase](https://supabase.com)
+2. Ejecuta el script SQL para crear las tablas:
+
+```sql
+-- Ver archivo: db_schema.sql en la raíz del proyecto
+```
+
+3. Crea un bucket de Storage llamado `profile-photos` y márcalo como público
+4. Ejecuta el script adicional para perfiles:
+
+```sql
+-- Ver archivo: supabase_profile_setup.sql
+```
+
+### Paso 4: Configurar variables de entorno
+
+Crea un archivo `.env` en la raíz del proyecto con tus credenciales de Supabase:
     ```env
     SUPABASE_URL=https://tu-proyecto.supabase.co
     SUPABASE_KEY=tu-anon-key

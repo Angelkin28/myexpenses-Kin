@@ -7,10 +7,10 @@ import '../repositories/expenses_repository.dart';
 
 class ExpensesProvider extends ChangeNotifier {
   final ExpensesRepository _repository = ExpensesRepository();
-  
+
   List<Expense> _allExpenses = [];
   List<Expense> _filteredExpenses = [];
-  
+
   bool _isLoading = false;
   String? _error;
 
@@ -54,6 +54,9 @@ class ExpensesProvider extends ChangeNotifier {
         .fold(0.0, (sum, item) => sum + item.amount);
   }
 
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
+
   Future<void> loadExpenses() async {
     _isLoading = true;
     _error = null;
@@ -61,6 +64,7 @@ class ExpensesProvider extends ChangeNotifier {
 
     try {
       _allExpenses = await _repository.getExpenses();
+      _isInitialized = true;
       _applyFilters();
     } catch (e) {
       _error = e.toString();
@@ -116,6 +120,7 @@ class ExpensesProvider extends ChangeNotifier {
   List<Expense> get expenses => _filteredExpenses;
   List<ExpenseCategory> get selectedCategories => _selectedCategories;
   DateTimeRange? get dateRange => _dateRange;
+  bool get hasSearch => _searchQuery.trim().isNotEmpty;
 
   // ... (dispose, setSearchQuery, getters for stats, CRUD methods same as before)
 
@@ -144,20 +149,26 @@ class ExpensesProvider extends ChangeNotifier {
 
   void _applyFilters() {
     _filteredExpenses = _allExpenses.where((e) {
-      bool matchesSearch = _searchQuery.isEmpty || 
+      bool matchesSearch =
+          _searchQuery.isEmpty ||
           e.description.toLowerCase().contains(_searchQuery.toLowerCase());
-      
+
       // Multi-select logic: If empty, show all. If not empty, show if contained.
-      bool matchesCategory = _selectedCategories.isEmpty || _selectedCategories.contains(e.category);
-      
-      bool matchesDate = _dateRange == null || 
-          (e.date.isAfter(_dateRange!.start.subtract(const Duration(days: 1))) && 
-           e.date.isBefore(_dateRange!.end.add(const Duration(days: 1))));
+      bool matchesCategory =
+          _selectedCategories.isEmpty ||
+          _selectedCategories.contains(e.category);
+
+      bool matchesDate =
+          _dateRange == null ||
+          (e.date.isAfter(
+                _dateRange!.start.subtract(const Duration(days: 1)),
+              ) &&
+              e.date.isBefore(_dateRange!.end.add(const Duration(days: 1))));
 
       return matchesSearch && matchesCategory && matchesDate;
     }).toList();
   }
-  
+
   Map<String, List<Expense>> get groupedExpenses {
     final groups = <String, List<Expense>>{};
     for (var expense in _filteredExpenses) {
