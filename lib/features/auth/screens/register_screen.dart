@@ -129,10 +129,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     _passwordController.text.trim(),
                                   );
                                   if (success && mounted) {
-                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Account created! Please login.')),
-                                    );
-                                    context.pop(); // Go back to login
+                                    // Navigate to verify
+                                    context.push('/verify-code', extra: _emailController.text.trim());
                                   }
                                 }
                               },

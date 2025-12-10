@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
+import 'features/auth/screens/verify_code_screen.dart';
 import 'features/auth/screens/splash_screen.dart';
 import 'features/expenses/screens/add_edit_expense_screen.dart';
 import 'features/expenses/screens/expense_detail_screen.dart';
@@ -22,6 +23,13 @@ final router = GoRouter(
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/verify-code',
+      builder: (context, state) {
+        final email = state.extra as String? ?? '';
+        return VerifyCodeScreen(email: email);
+      },
     ),
     GoRoute(
       path: '/home',
@@ -45,10 +53,12 @@ final router = GoRouter(
     final auth = context.read<AuthProvider>();
     final loggingIn = state.uri.toString() == '/login';
     final registering = state.uri.toString() == '/register';
+    final verifying = state.uri.toString() == '/verify-code'; // Careful with params
+    final simpleVerify = state.uri.toString().startsWith('/verify-code');
     final splash = state.uri.toString() == '/';
     
     // Allow splash, login and register to pass through
-    if (splash || loggingIn || registering) return null;
+    if (splash || loggingIn || registering || simpleVerify) return null;
 
     // If not authenticated, go to login
     if (!auth.isAuthenticated) return '/login';

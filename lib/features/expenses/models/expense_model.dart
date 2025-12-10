@@ -44,14 +44,16 @@ class Expense {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      // Don't send ID on create, Supabase generates it.
-      // But we might need it for update.
+    final map = {
       'amount': amount,
       'description': description,
       'category': category.toString().split('.').last,
       'payment_method': paymentMethod,
       'expense_date': DateFormat('yyyy-MM-dd').format(date),
     };
+    if (userId != null) {
+      map['user_id'] = userId!;
+    }
+    return map;
   }
 }

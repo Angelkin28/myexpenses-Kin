@@ -16,12 +16,7 @@ class AuthRepository {
         },
       );
       
-      // Depending on Supabase settings, this might return the user immediately
-      // or just a message to check email.
-      // If auto-confirm is off, we still get the user object but session might be null.
-      
       if (response.data != null && (response.data['user'] != null || response.data['id'] != null)) {
-         // handle weird varied responses from Supabase versions, usually 'user' key exists
          final userData = response.data['user'] ?? response.data;
          return UserModel.fromJson(userData);
       } else {
@@ -54,7 +49,27 @@ class AuthRepository {
       };
 
     } on DioException catch (e) {
+      if (e.response?.statusCode == 400 && e.response?.data['error_description'] == 'Email not confirmed') {
+        throw AuthFailure('Email not confirmed. Please verify your account.');
+      }
       throw AuthFailure(e.response?.data['error_description'] ?? 'Login failed');
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
+  Future<void> verifyOtp(String email, String token) async {
+    try {
+      await _dioClient.dio.post(
+        '/auth/v1/verify',
+        data: {
+          'type': 'signup',
+          'token': token,
+          'email': email,
+        },
+      );
+    } on DioException catch (e) {
+      throw AuthFailure(e.response?.data['error_description'] ?? 'Verification failed');
     } catch (e) {
       throw ServerFailure(e.toString());
     }

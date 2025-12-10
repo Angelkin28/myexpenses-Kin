@@ -83,6 +83,24 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> verifyCode(String email, String code) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _authRepository.verifyOtp(email, code);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     _user = null;
     final prefs = await SharedPreferences.getInstance();

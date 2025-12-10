@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../models/expense_model.dart';
 import '../models/category_model.dart';
 import '../providers/expenses_provider.dart';
@@ -61,6 +62,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = context.read<ExpensesProvider>();
+    final authProvider = context.read<AuthProvider>();
     final amount = double.parse(_amountController.text);
     final description = _descriptionController.text;
 
@@ -69,6 +71,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         // Create
         final newExpense = Expense(
           id: '', // Supabase generates this
+          userId: authProvider.user?.id,
           amount: amount,
           description: description,
           category: _selectedCategory,
@@ -80,6 +83,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         // Edit
         final updatedExpense = Expense(
           id: widget.expenseId!,
+          userId: authProvider.user?.id,
           amount: amount,
           description: description,
           category: _selectedCategory,
